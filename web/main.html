@@ -1,0 +1,281 @@
+<!-- web/main.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <script type="text/javascript" src="/eel.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to right, #008080, #00CED1);
+            color: #fff;
+            text-align: center;
+            margin: 20px;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        h1 {
+            color: #fff;
+        }
+
+        #loginSection {
+            margin-bottom: 20px;
+        }
+
+        #tasksList {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+
+        li {
+            background-color: rgba(255, 255, 255, 0.8);
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            color: #000;
+            font-weight: bold;
+            position: relative;
+        }
+
+        .edit-icon,
+        .delete-icon {
+            position: absolute;
+            top: 5px;
+            cursor: pointer;
+        }
+
+        .delete-icon {
+            right: 30px;
+        }
+
+        .edit-icon {
+            right: 5px;
+        }
+
+        input[type="text"],
+        select {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 10px;
+            color: #000;
+            font-weight: bold;
+        }
+
+        #addTaskBtn,
+        #weatherBtn,
+        #editTaskBtn,
+        #editTaskSaveBtn,
+        #loginRedirectBtn,
+        #registerRedirectBtn,
+        #logoutBtn,
+        #viewTasksBtn {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #fff;
+            color: #008080;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        #addTaskBtn:hover,
+        #weatherBtn:hover,
+        #editTaskBtn:hover,
+        #editTaskSaveBtn:hover,
+        #loginRedirectBtn:hover,
+        #registerRedirectBtn:hover,
+        #logoutBtn:hover,
+        #viewTasksBtn:hover {
+            background-color: #eee;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <h1>Task Manager</h1>
+
+        <!-- Login section -->
+        <div id="loginSection"></div>
+
+        <!-- Task list -->
+        <ul id="tasksList"></ul>
+
+        <!-- Task input and add button -->
+        <input type="text" id="taskInput" placeholder="Enter a task">
+        <select id="categoryInput">
+            <option value="Personal">Personal</option>
+            <option value="Studies">Studies</option>
+            <option value="Work">Work</option>
+            <option value="Sport">Sport</option>
+        </select>
+        <input type="text" id="timeInput" placeholder="Enter task time (optional)">
+        <button id="addTaskBtn" onclick="addTask()">Add Task</button>
+
+        <!-- View Tasks button -->
+        <button id="viewTasksBtn" onclick="viewTasks()">My tasks</button>
+
+        <!-- Button to view weather -->
+        <!-- Button to view weather -->
+
+        <a href="https://ims.gov.il/he/Forecasts" target="_blank" id="weatherBtn" onclick="makeExternalRequest()">View Weather</a>
+
+        <!-- New fields for editing task -->
+        <input type="text" id="editTaskInput" style="display: none;">
+        <button id="editTaskSaveBtn" style="display: none;" onclick="saveEditedTask()">Save Task</button>
+        <button id="editTaskBtn" style="display: none;" onclick="editTask()">Edit Task</button>
+
+        <!-- Redirect buttons -->
+        <button id="loginRedirectBtn" onclick="redirect_to_login()">Login</button>
+        <button id="registerRedirectBtn" onclick="redirect_to_registration()">Register</button>
+
+        <!-- Logout button -->
+        <button id="logoutBtn" style="display: none;" onclick="logout()">Logout</button>
+    </div>
+
+    <script type="text/javascript" src="/eel.js"></script>
+    <script>
+        function redirect_to_login() {
+            window.location.href = 'login.html';
+        }
+
+        function redirect_to_registration() {
+            window.location.href = 'register.html';
+        }
+
+        function logout() {
+            eel.logout_user()(function () {
+                loadLoginPage();
+            });
+        }
+
+        function addTask() {
+            var taskInput = document.getElementById('taskInput');
+            var categoryInput = document.getElementById('categoryInput');
+            var timeInput = document.getElementById('timeInput');
+            var task = taskInput.value;
+            var category = categoryInput.value;
+            var time = timeInput.value;
+
+            var urlParams = new URLSearchParams(window.location.search);
+            var username = urlParams.get('username');
+
+            if (task.trim() !== '') {
+                eel.add_task(task, category, time, username)(function () {
+                    taskInput.value = '';
+                    categoryInput.value = '';
+                    timeInput.value = '';
+                    refreshTasks(username);
+                });
+            }
+        }
+
+        function deleteTask(index) {
+            var urlParams = new URLSearchParams(window.location.search);
+            var username = urlParams.get('username');
+
+            eel.delete_task(index, username)(function () {
+                refreshTasks(username);
+            });
+        }
+
+        function editTask(index) {
+            var taskInput = document.getElementById('editTaskInput');
+            var tasksList = document.getElementById('tasksList');
+
+            // Display the task to be edited
+            taskInput.value = tasksList.children[index].textContent.trim();
+
+            // Show the edit task input and button, hide add task button
+            taskInput.style.display = 'inline-block';
+            document.getElementById('editTaskSaveBtn').style.display = 'inline-block';
+            document.getElementById('addTaskBtn').style.display = 'none';
+
+            // Save the index of the task being edited
+            taskInput.dataset.editIndex = index;
+        }
+
+        function cancelEdit() {
+            var taskInput = document.getElementById('editTaskInput');
+            taskInput.style.display = 'none';
+            document.getElementById('editTaskSaveBtn').style.display = 'none';
+            document.getElementById('addTaskBtn').style.display = 'inline-block';
+            taskInput.value = '';
+            delete taskInput.dataset.editIndex;
+        }
+
+        function saveEditedTask() {
+            var taskInput = document.getElementById('editTaskInput');
+            var editIndex = taskInput.dataset.editIndex;
+
+            var urlParams = new URLSearchParams(window.location.search);
+            var username = urlParams.get('username');
+
+            if (editIndex !== undefined && taskInput.value.trim() !== '') {
+                eel.edit_task(parseInt(editIndex), taskInput.value, username)(function () {
+                    refreshTasks(username);
+                    cancelEdit();
+                });
+            }
+        }
+
+        function refreshTasks(username) {
+            eel.get_tasks(username)(function (tasks) {
+                var tasksList = document.getElementById('tasksList');
+                tasksList.innerHTML = '';
+
+                tasks.forEach(function (task, index) {
+                    var li = document.createElement('li');
+                    li.innerHTML = task +
+                        '<span class="delete-icon" onclick="deleteTask(' + index + ')">❌</span>' +
+                        '<span class="edit-icon" onclick="editTask(' + index + ')">✏️</span>';
+                    tasksList.appendChild(li);
+                });
+            });
+        }
+
+        function loadLoginPage() {
+            window.location.href = 'login.html';
+        }
+
+        function viewTasks() {
+            var urlParams = new URLSearchParams(window.location.search);
+            var username = urlParams.get('username');
+
+            refreshTasks(username);
+        }
+
+        // Load the tasks for the logged-in user
+        var urlParams = new URLSearchParams(window.location.search);
+        var username = urlParams.get('username');
+
+        if (username) {
+            refreshTasks(username);
+            document.getElementById('loginSection').innerHTML = '<p>Welcome, ' + username + '!</p>';
+            document.getElementById('logoutBtn').style.display = 'inline-block';
+            document.getElementById('loginRedirectBtn').style.display = 'none';
+            document.getElementById('registerRedirectBtn').style.display = 'none';
+        } else {
+            loadLoginPage();
+            document.getElementById('logoutBtn').style.display = 'none';
+        }
+
+
+        function makeExternalRequest() {
+            const result = eel.make_external_request()();
+            console.log(result);
+
+        }
+
+    </script>
+</body>
+
+</html>

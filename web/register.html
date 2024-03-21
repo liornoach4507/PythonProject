@@ -1,0 +1,116 @@
+<!-- web/register.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <script type="text/javascript" src="/eel.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to right, #008080, #00CED1);
+            color: #fff;
+            text-align: center;
+            margin: 20px;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        h1 {
+            color: #fff;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 10px;
+            color: #000;
+            font-weight: bold;
+        }
+
+        #registerBtn {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #fff;
+            color: #008080;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        #registerBtn:hover {
+            background-color: #eee;
+        }
+
+        #loginRedirectBtn {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #fff;
+            color: #008080;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        #loginRedirectBtn:hover {
+            background-color: #eee;
+        }
+
+        #error {
+            color: #ff0000;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <h1>Register</h1>
+        <input type="text" id="newUsernameInput" placeholder="Choose a username">
+        <input type="password" id="newPasswordInput" placeholder="Choose a password">
+        <button id="registerBtn" onclick="register()">Register</button>
+        <button id="loginRedirectBtn" onclick="redirect_to_login()">Go back to Login</button>
+        <div id="error"></div>
+    </div>
+
+    <script>
+        function register() {
+            var newUsernameInput = document.getElementById('newUsernameInput');
+            var newPasswordInput = document.getElementById('newPasswordInput');
+            var newUsername = newUsernameInput.value;
+            var newPassword = newPasswordInput.value;
+
+            if (newUsername.trim() !== '' && newPassword.trim() !== '') {
+                eel.user_exists(newUsername)(function(response) {
+                    if (response === false) {
+                        // Username is available, proceed with registration
+                        eel.register_user(newUsername, newPassword)(function(registrationResponse) {
+                            if (registrationResponse === true) {
+                                // Successful registration, redirect to login page
+                                window.location.href = 'login.html';
+                            } else {
+                                // Registration failed, show error message
+                                document.getElementById('error').innerText = "Registration failed. Please try again.";
+                            }
+                        });
+                    } else {
+                        // Username already exists, show error message
+                        document.getElementById('error').innerText = "Username already exists. Please choose a different username.";
+                    }
+                });
+            }
+        }
+
+        function redirect_to_login() {
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>
+
